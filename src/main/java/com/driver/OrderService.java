@@ -101,19 +101,31 @@ public class OrderService {
     }
 
     public String getLastDeliveryTimeByPartnerId(String partnerId) throws Exception {
-        List<String> list = orderRepositoryObj.getOrdersByPartnerId(partnerId);
+//        List<String> list = orderRepositoryObj.getOrdersByPartnerId(partnerId);
 
-        if (list == null || list.isEmpty())
-            throw new Exception("No orders are currently assigned to this delivery partner");
+//        if (list == null || list.isEmpty())
+//            throw new Exception("No orders are currently assigned to this delivery partner");
+//
+//        int lastTime = 0;
+//        for (String orderId : list) {
+//            Order order = orderRepositoryObj.getOrderById(orderId);
+//
+//            lastTime = Math.max(lastTime, order.getDeliveryTime());
+//        }
+//
+//        return lastTime / 60 + ":" + lastTime % 60;
+        List<String> orderList = orderRepositoryObj.getOrdersByPartnerId(partnerId);
+        Order obj = orderRepositoryObj.getOrderDb().get(orderList.get(orderList.size()-1));
+        int time = obj.getDeliveryTime();
 
-        int lastTime = 0;
-        for (String orderId : list) {
-            Order order = orderRepositoryObj.getOrderById(orderId);
+        int hours = time / 60;
+        int minutes = time % 60;
 
-            lastTime = Math.max(lastTime, order.getDeliveryTime());
-        }
+        // Format hours and minutes as strings with leading zeros
+        String hoursStr = String.format("%02d", hours);
+        String minutesStr = String.format("%02d", minutes);
 
-        return lastTime / 60 + ":" + lastTime % 60;
+        return hoursStr + ":" + minutesStr;
     }
 
     public void deletePartnerById(String partnerId) throws Exception {
