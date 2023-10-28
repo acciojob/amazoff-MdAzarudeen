@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class OrderRepository {
-    public HashMap<String, Order> orderDb = new HashMap<>();
+    private HashMap<String, Order> orderDb = new HashMap<>();
 
     public HashMap<String, Order> getOrderDb() {
         return orderDb;
