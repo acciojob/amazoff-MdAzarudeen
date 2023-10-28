@@ -82,7 +82,7 @@ public class OrderService {
         return count;
     }
 
-    public Integer getOrdersLeftAfterGivenTimeByPartnerId(String time, String partnerId) throws Exception {
+    public Integer getCountOfOrdersLeftAfterGivenTimeByPartnerId(String time, String partnerId) throws Exception {
         List<String> list = orderRepositoryObj.getOrdersByPartnerId(partnerId);
         if (list == null || list.isEmpty())
             throw new Exception("No orders are currently assigned to this delivery partner");
