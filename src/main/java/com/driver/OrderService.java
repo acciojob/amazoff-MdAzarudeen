@@ -82,13 +82,13 @@ public class OrderService {
         return count;
     }
 
-    public Integer getCountOfOrdersLeftAfterGivenTimeByPartnerId(String time, String partnerId) throws Exception {
+    public Integer getOrdersLeftAfterGivenTimeByPartnerId(String time, String partnerId) throws Exception {
         List<String> list = orderRepositoryObj.getOrdersByPartnerId(partnerId);
         if (list == null || list.isEmpty())
             throw new Exception("No orders are currently assigned to this delivery partner");
 
-        int timeInMin = Integer.parseInt(time); //Integer.parseInt(time.substring(0, 2)) * 60 + Integer.parseInt(time.substring(3));
-
+        int timeInMin = Integer.parseInt(time.substring(0, 2)) * 60 + Integer.parseInt(time.substring(3));
+//Integer.parseInt(time);
         int count = 0;
         for (String orderId : list) {
             Order order = orderRepositoryObj.getOrderById(orderId);
