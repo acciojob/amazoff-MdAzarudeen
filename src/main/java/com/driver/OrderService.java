@@ -1,138 +1,109 @@
 package com.driver;
 
-import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.*;
 
 @Service
 public class OrderService {
-    private OrderRepository orderRepositoryObj = new OrderRepository();
+    //    @Autowired
+    OrderRepository orderRepository = new OrderRepository();
 
-    public void addOrder(Order order) throws Exception {
-        orderRepositoryObj.addOrder(order);
+    public void addOrder(Order order){
+        orderRepository.addOrder(order);
     }
 
-    public void addPartner(String partnerId) throws Exception {
-        orderRepositoryObj.addPartner(new DeliveryPartner(partnerId));
+    public void addPartner(String pId){
+        DeliveryPartner partner = new DeliveryPartner(pId);
+        orderRepository.addPartner(partner);
     }
 
-    public void addOrderPartnerPair(String orderId, String partnerId) throws Exception {
-        orderRepositoryObj.addOrderPartnerPair(orderId, partnerId);
+    public void assignOrder(String pId, String oId){
+        orderRepository.assignOrder(pId, oId);
     }
 
-    public Order getOrderById(String orderId) throws Exception {
-        Order order = orderRepositoryObj.getOrderById(orderId);
-        if (order == null)
-            throw new Exception("Order not found in the database");
-
-        return order;
+    public Order getOrderById(String oId){
+        return orderRepository.getOrderById(oId);
     }
 
-    public List<String> getAllOrders() throws Exception {
-        List<String> list = orderRepositoryObj.getAllOrders();
-        if (list.isEmpty())
-            throw new Exception("There are no orders currently");
-
-        return list;
+    public DeliveryPartner getPartnerById(String pId){
+        return orderRepository.getPartnerById(pId);
     }
 
-    public DeliveryPartner getPartnerById(String partnerId) throws Exception {
-        DeliveryPartner partner = orderRepositoryObj.getPartnerById(partnerId);
-        if (partner == null)
-            throw new Exception("A delivery partner with this partnerId is not found in the database");
-
-        return partner;
+    public int numOfOrdersAssignedToPartner(String pId){
+        return orderRepository.numOfOrdersAssignedToPartner(pId);
     }
 
-    public Integer getOrderCountByPartnerId(String partnerId) throws Exception {
-        DeliveryPartner partner = orderRepositoryObj.getPartnerById(partnerId);
-        if (partner == null)
-            throw new Exception("A delivery partner with this partnerId is not found in the database");
-
-        return partner.getNumberOfOrders();
+    public List<String> getListOfOrdersByPartner(String pId){
+        return orderRepository.getListOfOrdersByPartner(pId);
     }
 
-    public List<String> getOrdersByPartnerId(String partnerId) throws Exception {
-        List<String> list = orderRepositoryObj.getOrdersByPartnerId(partnerId);
-
-        if (list == null || list.isEmpty())
-            throw new Exception("No orders are currently assigned to this delivery partner");
-
-        return list;
+    public List<String> getAllOrders(){
+        return orderRepository.getAllOrders();
     }
 
-    public Integer getCountOfUnassignedOrders() {
-        List<String> orders = orderRepositoryObj.getAllOrders();
-        List<String> partners = orderRepositoryObj.getAllPartners();
+    public int getCountOfUnassignedOrders(){
+        return orderRepository.getCountOfUnassignedOrders();
+    }
 
-        int count = 0;
-        for (String order : orders) {
-            boolean flag = true;
-            for (String partner : partners) {
-                try {
-                    if (orderRepositoryObj.getOrdersByPartnerId(partner).contains(order)) {
-                        flag = false;
-                        break;
-                    }
-                } catch (Exception ignored) {}
+    public int getCountOfUndeliveredOrders(String pId, String time){
+        if(orderRepository.getListOfOrdersByPartner(pId) == null || time.length() == 0){
+            return 0;
+        }
+        // convert time from string to integer
+        String hrs = time.substring(0, 2);
+        String mnts = time.substring(3);
+        int maxTime = Integer.parseInt(hrs)*60 + Integer.parseInt(mnts);
+
+        // get list of all orders from partner id
+        List<String> partnerOrders = orderRepository.getListOfOrdersByPartner(pId);
+        int unDeliveredOrders = 0;
+
+        for(String oId: partnerOrders){
+            // get order by id then get delivery time of each order
+            Order order = orderRepository.getOrderById(oId);
+            if(order.getDeliveryTime() > maxTime){
+                unDeliveredOrders++;
             }
-
-            if (flag) ++count;
         }
 
-        return count;
+        return unDeliveredOrders;
     }
 
-    public Integer getOrdersLeftAfterGivenTimeByPartnerId(String time, String partnerId) throws Exception {
-        List<String> list = orderRepositoryObj.getOrdersByPartnerId(partnerId);
-        if (list == null || list.isEmpty())
-            throw new Exception("No orders are currently assigned to this delivery partner");
+    public String getLastDeliveryTime(String pId){
+        if(orderRepository.getListOfOrdersByPartner(pId) == null){
+            return null;
+        }
+        // get order list of that partner
+        List<String> partnerOrders = orderRepository.getListOfOrdersByPartner(pId);
 
-        int timeInMin = Integer.parseInt(time.substring(0, 2)) * 60 + Integer.parseInt(time.substring(3));
-//Integer.parseInt(time);
-        int count = 0;
-        for (String orderId : list) {
-            Order order = orderRepositoryObj.getOrderById(orderId);
+        int lastDeliveryTime = Integer.MIN_VALUE;
 
-            if (order.getDeliveryTime() > timeInMin)
-                ++count;
+        for(String oId: partnerOrders){
+            // get order and then get delivery time of that order
+            Order order = orderRepository.getOrderById(oId);
+            int deliveryTime = order.getDeliveryTime();
+            if(deliveryTime > lastDeliveryTime){
+                lastDeliveryTime = deliveryTime;
+            }
         }
 
-        return count;
+        // now convert this time from int to string
+        int h = lastDeliveryTime/60;
+        int m = lastDeliveryTime - (h*60);
+
+        String hrs = String.format("%02d", h);
+        String mnts = String.format("%02d", m);
+
+        return (hrs + ":" + mnts);
     }
 
-    public String getLastDeliveryTimeByPartnerId(String partnerId) throws Exception {
-//        List<String> list = orderRepositoryObj.getOrdersByPartnerId(partnerId);
-
-//        if (list == null || list.isEmpty())
-//            throw new Exception("No orders are currently assigned to this delivery partner");
-//
-//        int lastTime = 0;
-//        for (String orderId : list) {
-//            Order order = orderRepositoryObj.getOrderById(orderId);
-//
-//            lastTime = Math.max(lastTime, order.getDeliveryTime());
-//        }
-//
-//        return lastTime / 60 + ":" + lastTime % 60;
-        List<String> orderList = orderRepositoryObj.getOrdersByPartnerId(partnerId);
-        Order obj = orderRepositoryObj.getOrderDb().get(orderList.get(orderList.size()-1));
-        int time = obj.getDeliveryTime();
-
-        int hours = time / 60;
-        int minutes = time % 60;
-
-        // Format hours and minutes as strings with leading zeros
-        String hoursStr = String.format("%02d", hours);
-        String minutesStr = String.format("%02d", minutes);
-
-        return hoursStr + ":" + minutesStr;
+    public void deletePartner(String pId){
+        orderRepository.deletePartner(pId);
     }
 
-    public void deletePartnerById(String partnerId) throws Exception {
-        orderRepositoryObj.deletePartnerById(partnerId);
-    }
-
-    public void deleteOrderById(String orderId) throws Exception {
-        orderRepositoryObj.deleteOrderById(orderId);
+    public void deleteOrder(String oId){
+        orderRepository.deleteOrder(oId);
     }
 }
